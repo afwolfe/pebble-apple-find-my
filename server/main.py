@@ -8,15 +8,24 @@ app = Flask(__name__)
 
 apple_username = os.environ.get("APPLE_USERNAME")
 apple_password = os.environ.get("APPLE_PASSWORD")
-icloud = PyiCloudService(apple_username, apple_password)
+
+if apple_username and not apple_password:
+    icloud = PyiCloudService(apple_username)
+elif apple_username and apple_password:
+    icloud = PyiCloudService(apple_username, apple_password)
+else:
+    raise Exception("Neither APPLE_USERNAME nor APPLE_PASSWORD were set")
+
 
 @app.route('/find', methods=['POST'])
 def find():
     data = json.loads(request.data)
     if 'deviceId' in data:
         deviceId = data['deviceId']
-    
-    print('/find ' + deviceId)
+    else:
+        return '', 400
+        
+    print(f"/find {deviceId}")
     if (deviceId in icloud.devices.keys()):
         icloud.devices[deviceId].play_sound()
         return '', 200
