@@ -7,8 +7,8 @@
   ],
   "private": true,
   "dependencies": {
-    "crc": "^3.5.0",
-    "message-queue-pebble": "^1.0.0"
+    "message-queue-pebble": "^1.0.0",
+    "pebble-clay": "^1.0.4"
   },
   "pebble": {
     "displayName": "find-my",
@@ -29,10 +29,19 @@
       "DeviceClass",
       "DeviceName",
       "DeviceId",
-      "Status"
+      "Status",
+      "Server",
+      "Username",
+      "Password"
     ],
     "resources": {
       "media": []
     }
+  },
+  "devDependencies": {
+    "husky": "^7.0.4"
+  },
+  "scripts": {
+    "prepare": "husky install"
   }
 }

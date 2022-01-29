@@ -60,7 +60,7 @@ The `watchapp/` folder contains the source for the Pebble app. The PebbleKit JS 
 - [ ] Additional endpoint/option to set "Lost Mode"
 - [ ] Server authentication
 - [ ] Gunicorn server deployment
-- [ ] [Clay](https://github.com/pebble/clay) configuration
+- [x] [Clay](https://github.com/pebble/clay) configuration
 
 ## Acknowledgements
 
@@ -72,4 +72,5 @@ The `watchapp/` folder contains the source for the Pebble app. The PebbleKit JS 
   * [mode80/crc8js](https://github.com/mode80/crc8js/) - JS CRC implementation to create a map of device IDs to avoid sending large device IDs to the Pebble
   * [smallstoneapps/js-message-queue](https://github.com/smallstoneapps/js-message-queue/) - PebbleKit JS AppMessage queue library
   * [matthewtole/pebble-assist.h](https://gist.github.com/matthewtole/7699013) - Utility macros for Pebble development 
+  * [pebble/clay](https://github.com/pebble/clay) - Pebble Config Framework
   * [picklepete/pyicloud](https://github.com/picklepete/pyicloud) - Python iCloud wrapper.

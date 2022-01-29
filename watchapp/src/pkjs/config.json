@@ -1,0 +1,33 @@
+[
+    { 
+        "type": "heading", 
+        "defaultValue": "Pebble Find My Configuration" 
+    }, 
+    { 
+        "type": "text", 
+        "defaultValue": "Configure your Find My server settings here" 
+    },
+    {
+        "type": "input",
+        "messageKey": "Server",
+        "defaultValue": "http://192.168.1.100",
+        "label": "Pebble Find My Server Host"
+    },
+    {
+        "type": "input",
+        "messageKey": "Username",
+        "description": "NOT your Apple ID",
+        "label": " Pebble Find My Server Username"
+    },
+    {
+        "type": "input",
+        "messageKey": "Password",
+        "description": "NOT your Apple ID PW",
+        "label": "Pebble Find My Server Password"
+    },
+    {
+        "type": "submit",
+        "defaultValue": "Save"
+    }
+
+]

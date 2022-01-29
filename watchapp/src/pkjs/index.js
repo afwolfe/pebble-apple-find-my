@@ -1,4 +1,9 @@
+const Clay = require('pebble-clay');
 const MessageQueue= require('message-queue-pebble');
+const messageKeys = require('message_keys');
+
+const clayConfig = require('./config.json');
+const clay = new Clay(clayConfig);
 
 // Command Enums
 const COMMAND_KEY_LIST = 0;
@@ -13,33 +18,48 @@ const DEVICE_CLASS_DESKTOP = 3;
 const DEVICE_CLASS_WATCH = 4;
 const DEVICE_CLASS_UNKNOWN = 5;
 
-var SERVER_URL = "http://127.0.0.1:8000";
+var serverUrl;
+var username;
+var password;
 
 
 var deviceSummaries = [];
 var deviceIdMappings = {};
 
 
+Pebble.addEventListener('webviewclosed', function(e) {
+  if (e && !e.response) {
+    return;
+  }
+
+  // Get the keys and values from each config item
+  var settingsDict = clay.getSettings(e.response);
+
+  serverUrl = settingsDict[messageKeys['Server']];
+  localStorage.setItem("serverUrl", serverUrl);
+  username = settingsDict[messageKeys['Username']];
+  localStorage.setItem("username", username);
+  password = settingsDict[messageKeys['Password']];
+  localStorage.setItem("password", password);
+
+  if (serverUrl) {
+    updateDeviceList(sendDevicesToPebble);
+  }
+});
+
+
 Pebble.addEventListener("ready", function (e) {
   console.log("PebbleKit JS ready!");
 
-  // TODO: Get localStorage working for caching devices.
-  // var deviceSummariesStr = localStorage.getItem("deviceSummaries");
-  // try {
-  //   if (deviceSummariesStr != null && deviceSummariesStr.length > 0) {
-  //     deviceSummaries = JSON.parse("[" + deviceSummariesStr + "]");
-  //     sendDevicesToPebble(deviceSummaries);
-  //   }
-  //   else {
-  //     throw 'No devices in localStorage.'
-  //   }
-  // }
-  // catch (e) {
-  //   console.error("Unable to get deviceSummaries from localStorage, refreshing.", e);
-  //   updateDeviceList(sendDevicesToPebble);
-  // }
-
-  updateDeviceList(sendDevicesToPebble);
+  serverUrl = localStorage.getItem("serverUrl");
+  username = localStorage.getItem("username");
+  password = localStorage.getItem("password");
+  if (serverUrl) {
+    updateDeviceList(sendDevicesToPebble);
+  }
+  else {
+    // TODO: Send error message to Pebble to prompt config.
+  }
 
 });
 
@@ -79,10 +99,10 @@ function sendDevicesToPebble(devices) {
 function deviceClassToEnum(classString) {
   classString = classString.toLowerCase();
   if (classString.indexOf("iphone") >= 0) { return DEVICE_CLASS_PHONE; }
-  else if (classString.indexOf("macbook") > 0) { return DEVICE_CLASS_LAPTOP; }
-  else if (classString.indexOf("ipad") > 0) { return DEVICE_CLASS_TABLET; }
-  else if (classString.indexOf("imac") > 0) { return DEVICE_CLASS_DESKTOP; }
-  else if (classString.indexOf("watch") > 0) { return DEVICE_CLASS_WATCH; }
+  else if (classString.indexOf("macbook") >= 0) { return DEVICE_CLASS_LAPTOP; }
+  else if (classString.indexOf("ipad") >= 0) { return DEVICE_CLASS_TABLET; }
+  else if (classString.indexOf("imac") >= 0) { return DEVICE_CLASS_DESKTOP; }
+  else if (classString.indexOf("watch") >= 0) { return DEVICE_CLASS_WATCH; }
 
   return DEVICE_CLASS_UNKNOWN;
 }
@@ -112,14 +132,14 @@ function updateDeviceList(callback) {
       });
     }
 
-    // TODO: Get localStorage working.
-    // localStorage.setItem("deviceSummaries", newDeviceSummaries.toString());
+    // TODO: Use localStorage for caching.
+    // localStorage.setItem("deviceSummaries", JSON.stringify(newDeviceSummaries));
     callback(newDeviceSummaries);
   });
 }
 
 function findMyXhr(method, endpoint, body, callback) {
-  var url = SERVER_URL + "/" + endpoint;
+  var url = serverUrl + "/" + endpoint;
 
   var xhr = new XMLHttpRequest();
   xhr.addEventListener("readystatechange", function () {
@@ -129,8 +149,8 @@ function findMyXhr(method, endpoint, body, callback) {
         var data;
         if (xhr.responseText) {
           data = JSON.parse(xhr.responseText);
-        } else {
-          data = "OK";
+        } else { // If there's no response body, make one:
+          data = {"status": xhr.status};
         }
         callback(data);
       } else {
@@ -143,6 +163,9 @@ function findMyXhr(method, endpoint, body, callback) {
   // if (BEARER_TOKEN) {
   //   xhr.setRequestHeader("Authorization", BEARER_TOKEN);
   // }
+  if (username && password) {
+    xhr.setRequestHeader("Authorization", "Basic " + btoa(username + ":" + password));
+  }
   if (body) {
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.send(JSON.stringify(body));
