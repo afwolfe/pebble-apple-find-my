@@ -1,0 +1,7 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+# Add for local docker script 
+export NO_IT=true 
+
+cd watchapp
+pebble build

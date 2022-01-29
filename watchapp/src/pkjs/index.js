@@ -49,7 +49,6 @@ Pebble.addEventListener('webviewclosed', function(e) {
 
 
 Pebble.addEventListener("ready", function (e) {
-  console.log("PebbleKit JS ready!");
 
   serverUrl = localStorage.getItem("serverUrl");
   username = localStorage.getItem("username");
