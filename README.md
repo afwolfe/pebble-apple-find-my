@@ -57,7 +57,7 @@ The `watchapp/` folder contains the source for the Pebble app. The PebbleKit JS 
   - [ ] Location name using reverse geocoding API
 - [ ] Additional endpoint/option to set "Lost Mode"
 - [x] Server authentication
-- [ ] Gunicorn server deployment
+- [x] Gevent WSGI server
 - [x] [Clay](https://github.com/pebble/clay) configuration
 
 

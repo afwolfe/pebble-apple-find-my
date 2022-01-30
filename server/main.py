@@ -4,22 +4,27 @@ import logging
 import os 
 
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, create_refresh_token, get_jwt_identity
+from gevent.pywsgi import WSGIServer
 from jwt import decode
 from pyicloud import PyiCloudService
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# TODO: Investigate saving cookie
+# TODO: Investigate saving cookie/credentials from server w/out icloud CLI
 # https://github.com/picklepete/pyicloud/blob/master/CODE_SAMPLES.md
 
-# Flask initialization
 app = Flask(__name__)
-# auth = HTTPBasicAuth()
+CORS(app, resources='/findmy/api/*')
 jwt = JWTManager(app)
 
 app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY")
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
+
+server_port = int(os.environ.get("PORT")) if os.environ.get("PORT") else 8000
+ssl_cert_file = os.environ.get("SSL_CERT_FILE") 
+ssl_key_file = os.environ.get("SSL_KEY_FILE")
 
 if not app.config["JWT_SECRET_KEY"]:
     raise Exception("Missing JWT_SECRET_KEY")
@@ -40,7 +45,6 @@ elif apple_username and apple_password:
     icloud = PyiCloudService(apple_username, apple_password)
 else:
     raise Exception("Neither APPLE_USERNAME nor APPLE_PASSWORD were set")
-
 
 users = {
     api_user: generate_password_hash(api_password)
@@ -111,7 +115,9 @@ def list_devices():
         resp.append(dev_dict)
     return jsonify(resp)
 
-# TODO: Add endpoint to refresh iCloud credentials
-
 if __name__ == "__main__":
-    app.run(host='0.0.0.0',port=8000)
+    if ssl_cert_file and ssl_key_file:
+        server = WSGIServer(('', server_port), app, certfile=ssl_cert_file, keyfile=ssl_key_file)
+    else:
+        server = WSGIServer(('', server_port), app)
+    server.serve_forever()

@@ -4,10 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+gevent = "*"
 pyicloud = "*"
-flask = "*"
-jsonify = "*"
+flask = "2.0.2"
+flask-cors = "*"
 flask-jwt-extended = "*"
+jsonify = "*"
 werkzeug = "*"
 
 [dev-packages]
