@@ -46,7 +46,7 @@ users = {
     api_user: generate_password_hash(api_password)
 }
 
-@app.route('/login', methods=['POST'])
+@app.route('/findmy/api/v1/login', methods=['POST'])
 def login():
     if request.is_json:
         username = request.json["username"]
@@ -76,9 +76,7 @@ def login():
     else:
         return jsonify(status=401, message="Bad Email or Password"), 401
 
-# We are using the `refresh=True` options in jwt_required to only allow
-# refresh tokens to access this route.
-@app.route("/refresh", methods=["POST"])
+@app.route("/findmy/api/v1/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
     identity = get_jwt_identity()
@@ -86,7 +84,7 @@ def refresh():
     expiration = decode(access_token,  app.config["JWT_SECRET_KEY"], app.config["JWT_ALGORITHM"])['exp']
     return jsonify(token=access_token, expiration=expiration)
 
-@app.route('/find', methods=['POST'])
+@app.route('/findmy/api/v1/find', methods=['POST'])
 @jwt_required()
 def find():
     data = json.loads(request.data)
@@ -95,14 +93,14 @@ def find():
     else:
         return json.dumps({'status': 400, 'message': 'deviceId missing from request'}), 400
     
-    logging.info('/find ' + deviceId)
+    logging.info('/findmy/api/v1/find ' + deviceId)
     if (deviceId in icloud.devices.keys()):
         icloud.devices[deviceId].play_sound()
         return json.dumps({'status': 200, 'message': 'Successfully sent find request'}), 200
     else:
         return json.dumps({'status': 404, 'message': 'Device not found'}), 404
 
-@app.route('/devices', methods=['GET'])
+@app.route('/findmy/api/v1/devices', methods=['GET'])
 @jwt_required()
 def list_devices():
     resp = []

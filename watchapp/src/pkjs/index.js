@@ -185,14 +185,14 @@ function updateDeviceList(callback) {
 }
 
 function findMyXhr(method, endpoint, body, callback) {
-  var url = serverUrl + "/" + endpoint;
+  var url = serverUrl + "/findmy/api/v1/" + endpoint;
 
   var xhr = new XMLHttpRequest();
   xhr.addEventListener("readystatechange", function () {
     if (xhr.readyState === 4) {
       console.debug(method, url, xhr.status);
+      var data;
       if (xhr.status >= 200 && xhr.status < 300) {
-        var data;
         if (xhr.responseText) {
           data = JSON.parse(xhr.responseText);
         } else { // If there's no response body, make one:
