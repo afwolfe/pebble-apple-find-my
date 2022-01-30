@@ -89,14 +89,15 @@ static void in_out_size_calc() {
       TupletInteger(MESSAGE_KEY_Command, COMMAND_FIND),  // Only send one value at a time so this is right
       TupletInteger(MESSAGE_KEY_DeviceId, 123)
   };
-  outbound_size = dict_calc_buffer_size_from_tuplets(out_values, ARRAY_LENGTH(out_values));
+  outbound_size = dict_calc_buffer_size_from_tuplets(out_values, ARRAY_LENGTH(out_values)) + 8;
 
   Tuplet in_values[] = {
+    TupletInteger(MESSAGE_KEY_Command, COMMAND_FIND),
     TupletCString(MESSAGE_KEY_DeviceName, "abcdefghijklmnopqrstuvwxyz123456"),
     TupletInteger(MESSAGE_KEY_DeviceId, 123),
     TupletInteger(MESSAGE_KEY_DeviceClass, TABLET)
   };
-  inbound_size = dict_calc_buffer_size_from_tuplets(in_values, ARRAY_LENGTH(in_values));
+  inbound_size = dict_calc_buffer_size_from_tuplets(in_values, ARRAY_LENGTH(in_values)) + 8;
 
   INFO("In buff %d, Out buff %d", inbound_size, outbound_size);
 }

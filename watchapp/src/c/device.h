@@ -55,7 +55,7 @@ static void send_find_request(int deviceIndex) {
     if (app_message_outbox_begin(&iter) != APP_MSG_OK) {
         return;
     }
-    if (dict_write_cstring(iter, MESSAGE_KEY_Command, "FIND") != DICT_OK) {
+    if (dict_write_uint8(iter, MESSAGE_KEY_Command, COMMAND_FIND) != DICT_OK) {
         return;
     }
     if (dict_write_uint8(iter, MESSAGE_KEY_DeviceId, get_device_at_index(deviceIndex)->deviceId) != DICT_OK) {

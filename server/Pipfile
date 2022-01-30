@@ -7,6 +7,8 @@ name = "pypi"
 pyicloud = "*"
 flask = "*"
 jsonify = "*"
+flask-jwt-extended = "*"
+werkzeug = "*"
 
 [dev-packages]
 

@@ -21,9 +21,11 @@ const DEVICE_CLASS_UNKNOWN = 5;
 var serverUrl;
 var username;
 var password;
+var access = {};
+var refresh = {};
 
-
-var deviceSummaries = [];
+// TODO: Cache devices locally
+// var deviceSummaries;
 var deviceIdMappings = {};
 
 
@@ -53,6 +55,11 @@ Pebble.addEventListener("ready", function (e) {
   serverUrl = localStorage.getItem("serverUrl");
   username = localStorage.getItem("username");
   password = localStorage.getItem("password");
+
+  // Attempt to load refresh token.
+  refresh = localStorage.getItem("refreshToken");
+  refresh = refresh ? JSON.parse(refresh) : {};
+
   if (serverUrl) {
     updateDeviceList(sendDevicesToPebble);
   }
@@ -65,31 +72,24 @@ Pebble.addEventListener("ready", function (e) {
 // Listen for when an AppMessage is received
 Pebble.addEventListener("appmessage", function (event) {
   var msg = event.payload;
-  console.log(msg);
-  console.log("Message received from watch:", event.data);
   if (msg.hasOwnProperty("Command")) {
-    if (msg["Command"] == "FIND" && msg["DeviceId"])
-    console.log(msg["DeviceId"]);
-    if (deviceIdMappings.hasOwnProperty(msg["DeviceId"])) {
-      var deviceId = deviceIdMappings[msg["DeviceId"]];
-      var body = {
-        "deviceId": deviceId
-      };
-      findMyXhr("POST", "find", body, function (data) {
-        MessageQueue.sendAppMessage({ Command: COMMAND_KEY_FIND, Status: 200 });
-      });
+    if (msg["Command"] == COMMAND_KEY_FIND && msg.hasOwnProperty("DeviceId")) {
+      if (deviceIdMappings.hasOwnProperty(msg["DeviceId"])) {
+        var deviceId = deviceIdMappings[msg["DeviceId"]];
+        findDevice(deviceId, function(data) {
+          // TODO: Send confirmation to Pebble.
+        });
+      }
+      else {
+        console.error("Device mapping not found.")
+      }
     }
-    else {
-      console.error("Device mapping not found.")
-    }
-  
   }
 });
 
 function sendDevicesToPebble(devices) {
   console.log("Sending devices to Pebble...")
   devices.forEach(function(deviceMsg) {
-    console.debug("Sending device: " + deviceMsg);
     deviceMsg.Command = COMMAND_KEY_LIST;
     MessageQueue.sendAppMessage(deviceMsg);
   });
@@ -109,31 +109,68 @@ function deviceClassToEnum(classString) {
 function deviceIdToCrc(deviceId) {
   var crc8 = new CRC8();
   var deviceIdBytes = [];
-  for (var i = 0; i < deviceId.length; i++){  
+  for (var i = 0; i < deviceId.length; i++) {  
     deviceIdBytes.push(deviceId.charCodeAt(i));
   }
   return crc8.checksum(deviceIdBytes);
 }
 
-function updateDeviceList(callback) {
-  var newDeviceSummaries = [];
-  findMyXhr("GET", "devices", null, function (devices) {
-    for (i in devices) {
-      var device = devices[i];
-      console.debug("Found device with ID: " + device.id);
-      var deviceCrc = deviceIdToCrc(device.id)
-      deviceIdMappings[deviceCrc] = device.id;
-
-      newDeviceSummaries.push({
-        "DeviceName": device.name,
-        "DeviceId": deviceCrc,
-        "DeviceClass": deviceClassToEnum(device.deviceClass)
+function loginOrRefreshToken(callback, forceRefresh) {
+  if (forceRefresh || !access.hasOwnProperty('token') || access['expiration'] > Date.now())  { // If forceRefresh or access token is bad
+    if (refresh.hasOwnProperty('token')&& refresh['expiration'] < Date.now()) { // If refresh is good
+      findMyXhr("POST", "refresh", null, function(newToken) {
+        access = newToken;
+        callback();
+      });
+    } else { // Login
+      var body = {'username': username, 'password': password};
+      findMyXhr("POST", "login", body, function(data) {
+        access = data.access;
+        refresh = data.refresh;
+        localStorage.setItem('refreshToken', JSON.stringify(refresh));
+        callback();
       });
     }
+  }
+  else { // else means the tokens are good.
+    callback();
+  }
 
-    // TODO: Use localStorage for caching.
-    // localStorage.setItem("deviceSummaries", JSON.stringify(newDeviceSummaries));
-    callback(newDeviceSummaries);
+
+}
+
+function findDevice(deviceId, callback) {
+  loginOrRefreshToken(function() {
+    var body = {
+      "deviceId": deviceId
+    };
+    findMyXhr("POST", "find", body, function (data) {
+      MessageQueue.sendAppMessage({ Command: COMMAND_KEY_FIND, Status: 200 });
+      callback(data);
+    });
+  })
+}
+
+function updateDeviceList(callback) {
+  loginOrRefreshToken(function() {
+    var newDeviceSummaries = [];
+    findMyXhr("GET", "devices", null, function (devices) {
+      for (i in devices) {
+        var device = devices[i];
+        var deviceCrc = deviceIdToCrc(device.id);
+        deviceIdMappings[deviceCrc] = device.id;
+
+        newDeviceSummaries.push({
+          "DeviceName": device.name,
+          "DeviceId": deviceCrc,
+          "DeviceClass": deviceClassToEnum(device.deviceClass)
+        });
+      }
+
+      // TODO: Use localStorage for caching.
+      // localStorage.setItem("deviceSummaries", JSON.stringify(newDeviceSummaries));
+      callback(newDeviceSummaries);
+    });
   });
 }
 
@@ -159,12 +196,15 @@ function findMyXhr(method, endpoint, body, callback) {
   });
   xhr.open(method, url);
   xhr.setRequestHeader("Accept", "application/json");
-  // if (BEARER_TOKEN) {
-  //   xhr.setRequestHeader("Authorization", BEARER_TOKEN);
-  // }
-  if (username && password) {
-    xhr.setRequestHeader("Authorization", "Basic " + btoa(username + ":" + password));
+  if (endpoint !== "login" && access && access.hasOwnProperty("token")) {
+    xhr.setRequestHeader("Authorization", "Bearer " + access["token"]);
+  } else if (endpoint == "refresh" && refresh && refresh.hasOwnProperty("token")) {
+    xhr.setRequestHeader("Authorization", "Bearer " + refresh["token"]);
   }
+  else {
+    console.log("No token used for authentication.");
+  }
+
   if (body) {
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.send(JSON.stringify(body));
@@ -193,7 +233,7 @@ function CRC8(polynomial, initial_value) { // constructor takes an optional poly
   } 
   
   // returns a lookup table byte array given one of the values from CRC8.POLY 
-  CRC8.generateTable =function(polynomial)
+  CRC8.generateTable = function(polynomial)
   {
     var csTable = [] // 256 max len byte array
     
