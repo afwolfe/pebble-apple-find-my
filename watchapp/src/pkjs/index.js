@@ -115,19 +115,29 @@ function deviceIdToCrc(deviceId) {
   return crc8.checksum(deviceIdBytes);
 }
 
-function loginOrRefreshToken(callback, forceRefresh) {
-  if (forceRefresh || !access.hasOwnProperty('token') || access['expiration'] > Date.now())  { // If forceRefresh or access token is bad
-    if (refresh.hasOwnProperty('token')&& refresh['expiration'] < Date.now()) { // If refresh is good
-      findMyXhr("POST", "refresh", null, function(newToken) {
-        access = newToken;
-        callback();
+function loginOrRefreshToken(callback, forceNewToken) {
+  if (forceNewToken || !access.hasOwnProperty('token') || access['expiration'] > Date.now())  { // If forceRefresh or access token is bad
+    if (refresh.hasOwnProperty('token') && refresh['expiration'] < Date.now()) { // If refresh is good
+      findMyXhr("POST", "refresh", null, function(data) {
+        if (data.hasOwnProperty('token')) {
+          access = data;
+          callback();
+        } else { // failed to refresh.
+          refresh = {};
+          loginOrRefreshToken(callback, true);
+        }
       });
     } else { // Login
       var body = {'username': username, 'password': password};
       findMyXhr("POST", "login", body, function(data) {
-        access = data.access;
-        refresh = data.refresh;
-        localStorage.setItem('refreshToken', JSON.stringify(refresh));
+        if (data.hasOwnProperty("access") && data.hasOwnProperty("refresh")) {
+          access = data.access;
+          refresh = data.refresh;
+          localStorage.setItem('refreshToken', JSON.stringify(refresh));
+        } else {
+          console.log("Unable to login to server.");
+          // TODO: Send error message to Pebble on failed login
+        }
         callback();
       });
     }
@@ -191,6 +201,8 @@ function findMyXhr(method, endpoint, body, callback) {
         callback(data);
       } else {
         console.error(xhr.status);
+        data = {"status": xhr.status};
+        callback(data);
       }
     }
   });
