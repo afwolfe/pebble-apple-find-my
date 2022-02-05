@@ -10,6 +10,9 @@
     "message-queue-pebble": "^1.0.0",
     "pebble-clay": "^1.0.4"
   },
+  "devDependencies": {
+    "husky": "^7.0.4"
+  },
   "pebble": {
     "displayName": "find-my",
     "uuid": "a24f569b-658a-43bd-8935-821a9e14e6ed",
@@ -35,13 +38,21 @@
       "Password"
     ],
     "resources": {
-      "media": []
+      "media": [
+        {
+          "type": "raw",
+          "name": "CONFIRMATION",
+          "file": "images/Pebble_25x25_Generic_confirmation.pdc"
+        },
+        {
+          "type": "raw",
+          "name": "FAILED",
+          "file": "images/Pebble_25x25_Generic_failed.pdc"
+        }
+      ]
     }
   },
-  "devDependencies": {
-    "husky": "^7.0.4"
-  },
   "scripts": {
-    "prepare": "husky install"
+    "prepare": "cd .. && husky install"
   }
 }

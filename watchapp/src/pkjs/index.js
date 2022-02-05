@@ -64,7 +64,7 @@ Pebble.addEventListener("ready", function (e) {
     updateDeviceList(sendDevicesToPebble);
   }
   else {
-    // TODO: Send error message to Pebble to prompt config.
+
   }
 
 });
@@ -76,9 +76,7 @@ Pebble.addEventListener("appmessage", function (event) {
     if (msg["Command"] == COMMAND_KEY_FIND && msg.hasOwnProperty("DeviceId")) {
       if (deviceIdMappings.hasOwnProperty(msg["DeviceId"])) {
         var deviceId = deviceIdMappings[msg["DeviceId"]];
-        findDevice(deviceId, function(data) {
-          // TODO: Send confirmation to Pebble.
-        });
+        findDevice(deviceId);
       }
       else {
         console.error("Device mapping not found.")
@@ -86,6 +84,10 @@ Pebble.addEventListener("appmessage", function (event) {
     }
   }
 });
+
+function sendConfigError() {
+  MessageQueue.sendAppMessage({ Command: COMMAND_KEY_FIND, Status: 1 });
+}
 
 function sendDevicesToPebble(devices) {
   console.log("Sending devices to Pebble...")
@@ -136,7 +138,7 @@ function loginOrRefreshToken(callback, forceNewToken) {
           localStorage.setItem('refreshToken', JSON.stringify(refresh));
         } else {
           console.log("Unable to login to server.");
-          // TODO: Send error message to Pebble on failed login
+          sendConfigError();
         }
         callback();
       });
@@ -155,7 +157,7 @@ function findDevice(deviceId, callback) {
       "deviceId": deviceId
     };
     findMyXhr("POST", "find", body, function (data) {
-      MessageQueue.sendAppMessage({ Command: COMMAND_KEY_FIND, Status: 200 });
+      MessageQueue.sendAppMessage({ Command: COMMAND_KEY_FIND, Status: data.status });
       callback(data);
     });
   })
@@ -206,11 +208,17 @@ function findMyXhr(method, endpoint, body, callback) {
       }
     }
   });
+  xhr.addEventListener("timeout", function () {
+    data = {"status": 408};
+    callback(data);
+  });
+
   xhr.open(method, url);
+  xhr.timeout = 5000;
   xhr.setRequestHeader("Accept", "application/json");
   if (endpoint !== "login" && access && access.hasOwnProperty("token")) {
     xhr.setRequestHeader("Authorization", "Bearer " + access["token"]);
-  } else if (endpoint == "refresh" && refresh && refresh.hasOwnProperty("token")) {
+  } else if (endpoint === "refresh" && refresh && refresh.hasOwnProperty("token")) {
     xhr.setRequestHeader("Authorization", "Bearer " + refresh["token"]);
   }
   else {

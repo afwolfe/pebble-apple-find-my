@@ -1,6 +1,10 @@
 # pebble-apple-find-my
 
-An Apple "Find My" client for the Pebble smartwatch.
+An Apple "Find My" client for the Pebble smartwatch and accompanying server to interface with iCloud through pyicloud. 
+
+## Status
+
+The watchapp can login to the API server and get an access token in order to list your devices and send a request to find a particular device.
 
 ## Server
 
@@ -52,10 +56,12 @@ The `watchapp/` folder contains the source for the Pebble app. The PebbleKit JS 
 - [x] List devices on watchapp
 - [x] Trigger "Find My" alert from watchapp
 - [ ] Additional information on watchapp
+  - [x] Show request success/failure on Pebble
   - [ ] Icons for device class
   - [ ] Battery level
   - [ ] Location name using reverse geocoding API
-- [ ] Additional endpoint/option to set "Lost Mode"
+- [ ] Add endpoints to login/save iCloud credentials without pyicloud's `icloud` CLI.
+- [ ] Additional endpoint to set "Lost Mode"
 - [x] Server authentication
 - [x] Gevent WSGI server
 - [x] [Clay](https://github.com/pebble/clay) configuration
@@ -64,13 +70,13 @@ The `watchapp/` folder contains the source for the Pebble app. The PebbleKit JS 
 ## Acknowledgements
 
 * Inspiration/Resources
-  * [limbo/smartthings-remote](https://github.com/limbo/smartthings-remote) - For inspiration on handling the devices.
   * [pebble-examples](https://github.com/pebble-examples) - For examples of basic functionality and Pebble design patterns.
   * [Rebble](https://rebble.io/) - for keeping the Pebble alive in 2022.
+  * [limbo/smartthings-remote](https://github.com/limbo/smartthings-remote) - For inspiration on handling the devices.
 * Libraries
+  * [pebble/clay](https://github.com/pebble/clay) - Pebble Config Framework
   * [mode80/crc8js](https://github.com/mode80/crc8js/) - JS CRC implementation to create a map of device IDs to avoid sending large device IDs to the Pebble
   * [vimalloc/flask-jwt-extended](https://github.com/vimalloc/flask-jwt-extended) - JWT support for Flask.
   * [smallstoneapps/js-message-queue](https://github.com/smallstoneapps/js-message-queue/) - PebbleKit JS AppMessage queue library
   * [matthewtole/pebble-assist.h](https://gist.github.com/matthewtole/7699013) - Utility macros for Pebble development 
-  * [pebble/clay](https://github.com/pebble/clay) - Pebble Config Framework
   * [picklepete/pyicloud](https://github.com/picklepete/pyicloud) - Python iCloud wrapper.

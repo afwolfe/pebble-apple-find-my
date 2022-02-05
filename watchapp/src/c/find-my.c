@@ -1,15 +1,20 @@
 #include <pebble.h>
 #include "libs/pebble-assist.h"
+#include "find-my.h"
+#include "appmessage.h"
 #include "commands.h"
+#include "dialog-message.h"
 #include "device.h"
-#include "menu.h"
 
+enum sections {
+  DEVICE_SECTION,
+  NUM_MENU_SECTIONS
+};
 
 static Window *s_window;
-static TextLayer *s_text_layer;
 static MenuLayer *s_menu_layer;
 
-static void inbox_received_callback(DictionaryIterator *iter, void *context) {
+void find_my_inbox_received_handler(DictionaryIterator *iter) {
   Tuple *tuple = dict_find(iter, MESSAGE_KEY_Command);
   if (!tuple) {
     return;
@@ -31,7 +36,12 @@ static void inbox_received_callback(DictionaryIterator *iter, void *context) {
     }
     case COMMAND_FIND: {
       INFO("FIND command received");
-      // TODO: Handle find response
+      Tuple *status_tuple = dict_find(iter, MESSAGE_KEY_Status);
+      if (status_tuple) {
+        LOG("Status: %d", status_tuple->value->uint16);
+        dialog_message_window_push(status_tuple->value->uint16);
+      }
+
       // menu_layer_reload_data(s_menu_layer);
       break;
     }
@@ -42,19 +52,74 @@ static void inbox_received_callback(DictionaryIterator *iter, void *context) {
   }
 }
 
-static void inbox_dropped_callback(AppMessageResult reason, void *context) {
-  ERROR("Message dropped!");
+static uint16_t menu_get_num_sections_callback(MenuLayer *menu_layer, void *data) {
+  return NUM_MENU_SECTIONS;
 }
 
-static void outbox_failed_callback(DictionaryIterator *iter, AppMessageResult reason, void *context) {
-  ERROR("Outbox send failed!");
+static uint16_t menu_get_num_rows_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
+  switch (section_index) {
+    case DEVICE_SECTION: {
+      return get_device_count();
+    }
+    default:
+      return 0;
+  }
 }
 
-static void outbox_sent_callback(DictionaryIterator *iter, void *context) {
-  ERROR("Outbox send success!");
+static int16_t menu_get_header_height_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
+  return MENU_CELL_BASIC_HEADER_HEIGHT;
 }
 
-static void window_load(Window *window) {
+static void menu_draw_header_callback(GContext *ctx, const Layer *cell_layer, uint16_t section_index, void *data) {
+    // Determine which section we're working with
+    switch (section_index) {
+      case DEVICE_SECTION:
+        // Draw title text in the section header
+        menu_cell_basic_header_draw(ctx, cell_layer, "Devices");
+        break;
+      default:
+        break;
+    }
+}
+
+static void menu_draw_row_callback(GContext *ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
+  const int index = cell_index->row;
+  DeviceSummary* device = get_device_at_index(index);
+
+  if (device == NULL) {
+    return;
+  }
+  // TODO: Implement battery/status subtitle
+  // TODO: Implement icons
+  menu_cell_basic_draw(ctx, cell_layer, device->deviceName, NULL, NULL);    
+
+}
+
+static void menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
+    // Use the row to specify which item will receive the git action
+    const int index = cell_index->row;
+    send_find_request(index);
+
+}
+
+#ifdef PBL_ROUND
+static int16_t get_cell_height_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *callback_context) {
+  if (menu_layer_is_index_selected(menu_layer, cell_index)) {
+    switch (cell_index->row) {
+    case 0:
+      return MENU_CELL_ROUND_FOCUSED_SHORT_CELL_HEIGHT;
+      break;
+    default:
+      return MENU_CELL_ROUND_FOCUSED_TALL_CELL_HEIGHT;
+    }
+  }
+  else {
+    return MENU_CELL_ROUND_UNFOCUSED_SHORT_CELL_HEIGHT;
+  }
+}
+#endif
+
+static void prv_window_load(Window *window) {
 
   // Add menu to window
   s_menu_layer = menu_layer_create_fullscreen(window);
@@ -72,50 +137,17 @@ static void window_load(Window *window) {
   menu_layer_add_to_window(s_menu_layer, window);
 }
 
-static void window_unload(Window *window) {
-  text_layer_destroy(s_text_layer);
-}
-
-
-static int outbound_size;
-static int inbound_size;
-
-/*
- * Accurate buffer size count
- */
-static void in_out_size_calc() {
-
-  Tuplet out_values[] = {
-      TupletInteger(MESSAGE_KEY_Command, COMMAND_FIND),  // Only send one value at a time so this is right
-      TupletInteger(MESSAGE_KEY_DeviceId, 123)
-  };
-  outbound_size = dict_calc_buffer_size_from_tuplets(out_values, ARRAY_LENGTH(out_values)) + 8;
-
-  Tuplet in_values[] = {
-    TupletInteger(MESSAGE_KEY_Command, COMMAND_FIND),
-    TupletCString(MESSAGE_KEY_DeviceName, "abcdefghijklmnopqrstuvwxyz123456"),
-    TupletInteger(MESSAGE_KEY_DeviceId, 123),
-    TupletInteger(MESSAGE_KEY_DeviceClass, TABLET)
-  };
-  inbound_size = dict_calc_buffer_size_from_tuplets(in_values, ARRAY_LENGTH(in_values)) + 8;
-
-  INFO("In buff %d, Out buff %d", inbound_size, outbound_size);
+static void prv_window_unload(Window *window) {
+  menu_layer_destroy_safe(s_menu_layer);
 }
 
 static void init(void) {
-  app_message_register_inbox_received(inbox_received_callback);
-
-  in_out_size_calc();
-  app_message_open(inbound_size, outbound_size);
-
-  app_message_register_inbox_dropped(inbox_dropped_callback);
-  app_message_register_outbox_failed(outbox_failed_callback);
-  app_message_register_outbox_sent(outbox_sent_callback);
+  appmessage_init();
 
   s_window = window_create();
   window_set_window_handlers(s_window, (WindowHandlers){
-    .load = window_load,
-    .unload = window_unload,
+    .load = prv_window_load,
+    .unload = prv_window_unload,
   });
   const bool animated = false;
   window_stack_push(s_window, animated);
