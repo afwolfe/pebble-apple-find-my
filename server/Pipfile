@@ -5,14 +5,16 @@ name = "pypi"
 
 [packages]
 gevent = "*"
-pyicloud = "*"
-flask = "2.0.2"
+pyicloud = "~=0.10.2"
+flask = "~=2.0.2"
 flask-cors = "*"
 flask-jwt-extended = "*"
 jsonify = "*"
 werkzeug = "*"
 
 [dev-packages]
+autopep8 = "*"
+pytest = "*"
 
 [requires]
 python_version = "3.9"
