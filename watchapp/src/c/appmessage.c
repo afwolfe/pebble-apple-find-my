@@ -39,9 +39,12 @@ static void in_out_size_calc() {
 
   Tuplet in_values[] = {
     TupletInteger(MESSAGE_KEY_Command, COMMAND_FIND),
-    TupletCString(MESSAGE_KEY_DeviceName, "abcdefghijklmnopqrstuvwxyz123456"),
     TupletInteger(MESSAGE_KEY_DeviceId, 123),
-    TupletInteger(MESSAGE_KEY_DeviceClass, TABLET)
+    TupletCString(MESSAGE_KEY_DeviceName, "abcdefghijklmnopqrstuvwxyz123456"),
+    TupletInteger(MESSAGE_KEY_DeviceClass, TABLET),
+    TupletInteger(MESSAGE_KEY_DeviceStatus, 200),
+    TupletCString(MESSAGE_KEY_BatteryLevel, "100"),
+    TupletInteger(MESSAGE_KEY_BatteryStatus, CHARGING)
   };
   inbound_size = dict_calc_buffer_size_from_tuplets(in_values, ARRAY_LENGTH(in_values)) + 8;
 

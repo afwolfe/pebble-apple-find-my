@@ -28,10 +28,13 @@
       "watchface": false
     },
     "messageKeys": [
+      "BatteryLevel",
+      "BatteryStatus",
       "Command",
       "DeviceClass",
       "DeviceName",
       "DeviceId",
+      "DeviceStatus",
       "Status",
       "Server",
       "Username",

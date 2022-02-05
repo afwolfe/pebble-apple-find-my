@@ -59,7 +59,7 @@ The `watchapp/` folder contains the source for the Pebble app. The PebbleKit JS 
 - [ ] Additional information on watchapp
   - [x] Show request success/failure on Pebble
   - [ ] Icons for device class
-  - [ ] Battery level
+  - [x] Battery level and status
   - [ ] Location name using reverse geocoding API
 - [ ] Add endpoints to login/save iCloud credentials without pyicloud's `icloud` CLI.
 - [ ] Additional endpoint to set "Lost Mode"

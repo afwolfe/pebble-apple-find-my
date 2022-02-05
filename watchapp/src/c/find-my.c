@@ -26,10 +26,20 @@ void find_my_inbox_received_handler(DictionaryIterator *iter) {
       Tuple *id_tuple = dict_find(iter, MESSAGE_KEY_DeviceId);
       Tuple *name_tuple = dict_find(iter, MESSAGE_KEY_DeviceName);
       Tuple *class_tuple = dict_find(iter, MESSAGE_KEY_DeviceClass);
+      Tuple *dstatus_tuple = dict_find(iter, MESSAGE_KEY_DeviceStatus);
+      Tuple *blevel_tuple = dict_find(iter, MESSAGE_KEY_BatteryLevel);
+      Tuple *bstatus_tuple = dict_find(iter, MESSAGE_KEY_BatteryStatus);
 
-      if (id_tuple && name_tuple && class_tuple) {
+      if (id_tuple && name_tuple && class_tuple && dstatus_tuple && blevel_tuple && bstatus_tuple) {
         LOG("Received device: %s", name_tuple->value->cstring);
-        add_device(id_tuple->value->uint8, name_tuple->value->cstring, class_tuple->value->uint8);
+        add_device(
+          id_tuple->value->uint8,
+          name_tuple->value->cstring,
+          class_tuple->value->uint8,
+          dstatus_tuple->value->uint16,
+          blevel_tuple->value->cstring,
+          bstatus_tuple->value->uint8
+          );
         menu_layer_reload_data_and_mark_dirty(s_menu_layer);
       }
       break;
@@ -89,9 +99,26 @@ static void menu_draw_row_callback(GContext *ctx, const Layer *cell_layer, MenuI
   if (device == NULL) {
     return;
   }
-  // TODO: Implement battery/status subtitle
   // TODO: Implement icons
-  menu_cell_basic_draw(ctx, cell_layer, device->deviceName, NULL, NULL);    
+  char statusString[30];
+  LOG("%d", device->deviceStatus);
+  switch (device->deviceStatus) {
+    case 200:
+    case 201:
+      strcpy(statusString, "Online - ");
+      break;
+    default:
+      strcpy(statusString, "Unknown - ");
+      break;
+  }
+
+  strcat(statusString, device->batteryLevel);
+
+  if (device->batteryStatus == CHARGING) {
+    strcat(statusString, " - Charging");
+  }
+
+  menu_cell_basic_draw(ctx, cell_layer, device->deviceName, statusString, NULL);    
 
 }
 

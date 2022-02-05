@@ -6,7 +6,9 @@
 static DeviceSummary devices[MAX_DEVICES];
 static int device_count = 0;
 
-void add_device(uint8_t deviceId, char *deviceName, DeviceClass deviceClass) {
+void add_device(uint8_t deviceId, char *deviceName, DeviceClass deviceClass, uint16_t deviceStatus, char *batteryLevel, BatteryStatus batteryStatus) {
+
+// void add_device(uint8_t deviceId, char *deviceName, DeviceClass deviceClass) {
 
     // Don't do anything if device already exists.
     for (int i=0; i<device_count; i++) {
@@ -21,6 +23,9 @@ void add_device(uint8_t deviceId, char *deviceName, DeviceClass deviceClass) {
     devices[device_count].deviceId = deviceId;
 	strcpy(devices[device_count].deviceName, deviceName);
 	devices[device_count].deviceClass = deviceClass;
+    devices[device_count].deviceStatus = deviceStatus;
+    strcpy(devices[device_count].batteryLevel, batteryLevel);
+    devices[device_count].batteryStatus = batteryStatus;
 	device_count++;
 		
 }

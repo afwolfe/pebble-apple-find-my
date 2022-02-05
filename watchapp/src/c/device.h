@@ -12,13 +12,22 @@ typedef enum {
     UNKNOWN
 } DeviceClass;
 
+typedef enum {
+    CHARGING,
+    NOT_CHARGING,
+    BATTERY_UNKNOWN,
+} BatteryStatus;
+
 typedef struct {
     uint8_t deviceId;
     char deviceName[MAX_NAME_LENGTH];
-    DeviceClass deviceClass; 
+    DeviceClass deviceClass;
+    uint16_t deviceStatus;
+    char batteryLevel[4];
+    BatteryStatus batteryStatus;
 } DeviceSummary;
 
-void add_device(uint8_t deviceId, char *deviceName, DeviceClass deviceClass);
+void add_device(uint8_t deviceId, char *deviceName, DeviceClass deviceClass, uint16_t deviceStatus, char *batteryLevel, BatteryStatus BatteryStatus);
 
 DeviceSummary* get_device_at_index(int index);
 

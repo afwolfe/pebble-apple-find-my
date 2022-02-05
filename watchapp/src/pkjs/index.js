@@ -9,6 +9,9 @@ const clay = new Clay(clayConfig);
 const COMMAND_KEY_LIST = 0;
 const COMMAND_KEY_FIND = 1;
 
+const BATTERY_CHARGING = 0;
+const BATTERY_NOT_CHARGING = 1;
+const BATTERY_UNKNOWN = 2;
 
 // DeviceClass Enums
 const DEVICE_CLASS_PHONE = 0;
@@ -108,6 +111,13 @@ function deviceClassToEnum(classString) {
   return DEVICE_CLASS_UNKNOWN;
 }
 
+function batteryStatusToEnum(statusString) {
+  statusString = statusString.toLowerCase();
+  if (statusString === "charging") { return BATTERY_CHARGING; }
+  else if (statusString === "notcharging") { return BATTERY_NOT_CHARGING; }
+  else { return BATTERY_UNKNOWN; }
+}
+
 function deviceIdToCrc(deviceId) {
   var crc8 = new CRC8();
   var deviceIdBytes = [];
@@ -175,7 +185,10 @@ function updateDeviceList(callback) {
         newDeviceSummaries.push({
           "DeviceName": device.name,
           "DeviceId": deviceCrc,
-          "DeviceClass": deviceClassToEnum(device.deviceClass)
+          "DeviceClass": deviceClassToEnum(device.deviceClass),
+          "DeviceStatus": parseInt(device.deviceStatus),
+          "BatteryLevel": String(parseInt(device.batteryLevel * 100)) + "%", // Convert float to a percent
+          "BatteryStatus": batteryStatusToEnum(device.batteryStatus)
         });
       }
 
