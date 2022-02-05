@@ -24,8 +24,9 @@ The `watchapp/` folder contains the source for the Pebble app. The PebbleKit JS 
     ```sh
     $ cd server
     $ pip install pipenv
-    $ pipenv install
+    $ pipenv install --skip-lock
     ```
+    * The `--skip-lock` is necessary due to a strict version pinning of `click` in pyicloud see [pyicloud issue #289](https://github.com/picklepete/pyicloud/issues/289)
 2. Open a pipenv shell and configure your iCloud account for 2FA, see [the pyicloud documentation](https://github.com/picklepete/pyicloud#authentication) for more details.
     * It is recommended that you save your password/2FA in the keyring using the `icloud` command.
     * This will make server startup seamless without the need for interaction
